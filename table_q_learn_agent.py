@@ -16,20 +16,20 @@ _PLAYER_SELF = 1
 
 action_mapping = {
 	'NOTHING':['NOTHING'],
-	'TRAIN_BARRACKS_MARINE':['SELECT_BARRACKS','TRAIN_BARRACKS_MARINE'],
+	'TRAIN_BARRACKS_MARINE':['SELECT_BARRACKS_ALL','TRAIN_BARRACKS_MARINE'],
 	'TRAIN_BARRACKS_REAPER':['SELECT_BARRACKS','TRAIN_BARRACKS_REAPER'],
 	'TRAIN_BARRACKS_MARAUDER':['SELECT_BARRACKS','TRAIN_BARRACKS_MARAUDER'],
 	'TRAIN_FACTORY_HELLION':['SELECT_FACTORY','TRAIN_FACTORY_HELLION'],
 	'TRAIN_FACTORY_TANK':['SELECT_FACTORY','TRAIN_FACTORY_TANK'],
-	# 'TRAIN_SCV':['SELECT_COMMAND_CENTER','TRAIN_SCV'],
-	'BUILD_COMMAND_CENTER':['SELECT_SCV','BUILD_COMMAND_CENTER'],
+	'TRAIN_SCV':['SELECT_COMMAND_CENTER','TRAIN_SCV'],
+	'BUILD_COMMANDCENTER':['SELECT_SCV','BUILD_COMMANDCENTER'],
 	'BUILD_BARRACKS':['SELECT_SCV','BUILD_BARRACKS'],
-	'BUILD_SUPPLY_DEPOT':['SELECT_SCV','BUILD_SUPPLY_DEPOT'],
+	'BUILD_SUPPLYDEPOT':['SELECT_SCV','BUILD_SUPPLYDEPOT'],
 	'BUILD_REFINERY':['SELECT_SCV','BUILD_REFINERY'],
-	'BUILD_ENG_BAY':['SELECT_SCV','BUILD_ENG_BAY'],
+	'BUILD_ENGBAY':['SELECT_SCV','BUILD_ENGBAY'],
 	'BUILD_FACTORY':['SELECT_SCV','BUILD_FACTORY'],
-	'BUILD_FACTORY_TECH_LAB':['SELECT_FACTORY','BUILD_FACTORY_TECH_LAB','LAND','LAND'],
-	'BUILD_BARRACKS_TECH_LAB':['SELECT_BARRACKS','BUILD_BARRACKS_TECH_LAB','LAND','LAND']
+	'BUILD_FACTORY_TECH_LAB':['SELECT_FACTORY','BUILD_FACTORY_TECH_LAB'],
+	'BUILD_BARRACKS_TECH_LAB':['SELECT_BARRACKS','BUILD_BARRACKS_TECH_LAB']
 }
 
 for mm_x in range(0, 64):
@@ -136,7 +136,7 @@ class TableQLearnAgent(base_agent.BaseAgent):
 		excluded_actions = []
 
 		if command_center_count >= 1:
-			excluded_actions.append(high_actions.index('BUILD_COMMAND_CENTER'))
+			excluded_actions.append(high_actions.index('BUILD_COMMANDCENTER'))
 
 		if vespene == 0 or barracks_count == 0:
 			excluded_actions.append(high_actions.index('BUILD_BARRACKS_TECH_LAB'))
@@ -148,13 +148,13 @@ class TableQLearnAgent(base_agent.BaseAgent):
 			excluded_actions.append(high_actions.index('BUILD_FACTORY'))
 
 		if eng_bay_count >= 1 or worker_supply == 0:
-			excluded_actions.append(high_actions.index('BUILD_ENG_BAY'))
+			excluded_actions.append(high_actions.index('BUILD_ENGBAY'))
 
 		if refinery_count >= 2 or worker_supply == 0:
 			excluded_actions.append(high_actions.index('BUILD_REFINERY'))
 
 		if supply_depot_count >= 5 or worker_supply == 0:
-			excluded_actions.append(high_actions.index('BUILD_SUPPLY_DEPOT'))
+			excluded_actions.append(high_actions.index('BUILD_SUPPLYDEPOT'))
 
 		if supply_depot_count == 0 or barracks_count >= 2 or worker_supply == 0:
 			excluded_actions.append(high_actions.index('BUILD_BARRACKS'))

@@ -12,21 +12,27 @@ valid_actions = [
 	'TRAIN_FACTORY_TANK',
 	'TRAIN_BARRACKS_MARAUDER',
 	'SELECT_BARRACKS',
-	'SELECT_COMMAND_CENTER',
+	'SELECT_COMMANDCENTER',
 	'SELECT_FACTORY',
 	'BUILD_BARRACKS',
 	'BUILD_BARRACKS_TECH_LAB',
-	'SELECT_ENG_BAY',
-	'BUILD_SUPPLY_DEPOT',
+	'SELECT_ENGBAY',
+	'BUILD_SUPPLYDEPOT',
 	'BUILD_COMMAND_CENTER',
 	'BUILD_REFINERY',
 	'BUILD_FACTORY',
 	'BUILD_FACTORY_TECH_LAB',
-	'BUILD_ENG_BAY',
+	'BUILD_ENGBAY',
 	'SELECT_ARMY',
 	'RESEARCH_INFANTRY_WEAPONS_UPGRADE',
 	'LAND',
 ]
+
+unit_mapping = {
+	'BARRACKS':units.Terran.Barracks,
+	'ENGBAY':units.Terran.EngineeringBay,
+	'FACTORY':units.Terran.Factory
+}
 
 for x in range(64):
 	for y in range(64):
@@ -35,6 +41,9 @@ for x in range(64):
 			valid_actions.append('ATTACK_%d_%d' % (x - 8, y - 8))
 
 class ActionUtils:
+
+	def __init__(self):
+		self.state = {}
 
 	def count_units(self, obs, unit_type):
 		return len(self.get_units(obs, unit_type))
@@ -79,22 +88,26 @@ class ActionUtils:
 		else:
 			return self.nothing()
 
-	def select(self,type, obs, all=True):
+	def select(self,type, obs, all=True, random_choice=False):
 		group = self.get_units(obs, type)
-		group_unit = self.find_valid(group)
+		group_unit = self.find_valid(group, random_choice)
 		if group_unit is not None:
 			if all:
 				action_name = "select_all_type"
 			else:
 				action_name = "select"
+				self.state['selected'] = group_unit
 			return actions.FUNCTIONS.select_point(action_name, (group_unit.x, group_unit.y))
 		else:
 			return self.nothing()
 
-	def find_valid(self, choices):
+	def find_valid(self, choices, random_choice=False):
 		valid_choices = self.find_all_valid(choices)
 		if len(valid_choices) > 0:
-			return valid_choices[0]
+			if random_choice:
+				return random.choice(valid_choices)
+			else:
+				return valid_choices[0]
 		else:
 			return None
 
@@ -143,37 +156,33 @@ class ActionUtils:
 				return actions.FUNCTIONS.Attack_minimap("now", self.transform_location(x,y, base_top_left))
 			else:
 				return self.nothing()
-		elif choice == 'SELECT_SCV':
-			if obs.observation.player.idle_worker_count > 0:
-				return actions.FUNCTIONS.select_idle_worker("select")
-			return self.select(units.Terran.SCV, obs, all=False)
 		elif choice == "LAND":
 			if self.can_do(actions.FUNCTIONS.Land_screen.id, obs):
 				return actions.FUNCTIONS.Land_screen("queued", self.anywhere())
 			else:
 				return self.nothing()
-		elif choice == 'BUILD_COMMAND_CENTER':
+		elif choice == 'BUILD_FACTORY_TECH_LAB':
+			if 'selected' in self.state:
+				loc = (self.state['selected'].x, self.state['selected'].y)
+				return self.build(units.Terran.Factory, actions.FUNCTIONS.Build_TechLab_screen, obs, loc)
+			else:
+				return self.build(units.Terran.Factory, actions.FUNCTIONS.Build_TechLab_screen, obs)
+		elif choice == 'BUILD_BARRACKS_TECH_LAB':
+			if 'selected' in self.state:
+				loc = (self.state['selected'].x, self.state['selected'].y)
+				return self.build(units.Terran.Barracks, actions.FUNCTIONS.Build_TechLab_screen, obs, loc)
+			else:
+				return self.build(units.Terran.Barracks, actions.FUNCTIONS.Build_TechLab_screen, obs)
+		elif choice == 'BUILD_COMMANDCENTER':
 			return self.build(units.Terran.SCV, actions.FUNCTIONS.Build_CommandCenter_screen, obs)
 		elif choice == 'BUILD_FACTORY':
 			return self.build(units.Terran.SCV, actions.FUNCTIONS.Build_Factory_screen, obs)
-		elif choice == 'BUILD_FACTORY_TECH_LAB':
-			return self.build(units.Terran.Factory, actions.FUNCTIONS.Build_TechLab_screen, obs)
-		elif choice == 'BUILD_ENG_BAY':
+		elif choice == 'BUILD_ENGBAY':
 			return self.build(units.Terran.SCV, actions.FUNCTIONS.Build_EngineeringBay_screen, obs)
 		elif choice == 'BUILD_BARRACKS':
 			return self.build(units.Terran.SCV, actions.FUNCTIONS.Build_Barracks_screen, obs)
-		elif choice == 'BUILD_SUPPLY_DEPOT':
+		elif choice == 'BUILD_SUPPLYDEPOT':
 			return self.build(units.Terran.SCV, actions.FUNCTIONS.Build_SupplyDepot_screen, obs)
-		elif choice == 'BUILD_BARRACKS_TECH_LAB':
-			return self.build(units.Terran.Barracks, actions.FUNCTIONS.Build_TechLab_screen, obs)
-		elif choice == 'SELECT_BARRACKS':
-			return self.select(units.Terran.Barracks, obs)
-		elif choice == 'SELECT_COMMAND_CENTER':
-			return self.select(units.Terran.CommandCenter, obs)
-		elif choice == 'SELECT_FACTORY':
-			return self.select(units.Terran.Factory, obs)
-		elif choice == 'SELECT_ENG_BAY':
-			return self.select(units.Terran.EngineeringBay, obs)
 		elif choice == 'TRAIN_FACTORY_HELLION':
 			return self.train(units.Terran.Factory, actions.FUNCTIONS.Train_Hellion_quick, obs)
 		elif choice == 'TRAIN_FACTORY_TANK':
@@ -198,15 +207,6 @@ class ActionUtils:
 				return self.build(units.Terran.SCV, actions.FUNCTIONS.Build_Refinery_screen, obs, (open_geysers[0].x, open_geysers[0].y))
 			else:
 				return self.nothing()
-			# if self.unit_type_is_selected(obs, units.Terran.SCV) and self.can_do(actions.FUNCTIONS.Build_Refinery_screen.id, obs):
-			# 	geysers = self.get_units(obs, units.Neutral.VespeneGeyser)
-			# 	if len(geysers) > 0:
-			# 		geyser = random.choice(geysers)
-			# 		return actions.FUNCTIONS.Build_Refinery_screen("now", (geyser.x, geyser.y))
-			# 	else:
-			# 		return self.nothing(obs)
-			# else:
-			# 	return self.nothing(obs)
 		# elif choice == RETURN_SCV_MINING:
 		# 	minerals = self.get_units(obs, units.Neutral.MineralField)
 		# 	if len(minerals) > 0 and self.unit_type_is_selected(obs, units.Terran.SCV) and self.can_do(actions.FUNCTIONS.Harvest_Gather_screen.id, obs):
@@ -214,11 +214,26 @@ class ActionUtils:
 		# 		return actions.FUNCTIONS.Harvest_Gather_screen("now", (mineral.x, mineral.y))
 		# 	else:
 		# 		return self.nothing(obs)
+		elif choice == 'SELECT_SCV':
+			if obs.observation.player.idle_worker_count > 0:
+				return actions.FUNCTIONS.select_idle_worker("select")
+			return self.select(units.Terran.SCV, obs, all=False, random_choice=True)
 		elif choice == 'SELECT_ARMY':
 			if self.can_do(actions.FUNCTIONS.select_army.id, obs):
 				return actions.FUNCTIONS.select_army("select")
 			else:
 				return self.nothing()
+		elif choice.startswith('SELECT_'):
+			select_elements = choice.split('_')
+			if select_elements[1] in unit_mapping:
+				if len(select_elements) == 3 and select_elements[2] == 'ALL':
+					all = True
+				else:
+					all = False
+				return self.select(unit_mapping[select_elements[1]], obs, all=all)
+			else:
+				return self.nothing()
+		
 		# elif choice == PATROL_ARMY:
 		# 	if self.unit_type_is_selected(obs, units.Terran.Marine) and self.can_do(actions.FUNCTIONS.Move_screen.id, obs):
 		# 		command_centers = self.get_units(obs, units.Terran.CommandCenter)
@@ -235,5 +250,4 @@ class ActionUtils:
 		# 		return actions.FUNCTIONS.Attack_minimap("now", self.attack_coordinates)
 		# 	else:
 		# 		return self.nothing(obs)
-		else:
-			return self.nothing()
+		return self.nothing()
