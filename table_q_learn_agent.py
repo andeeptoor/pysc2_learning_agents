@@ -36,7 +36,7 @@ for mm_x in range(0, 64):
 	for mm_y in range(0, 64):
 		if (mm_x + 1) % 32 == 0 and (mm_y + 1) % 32 == 0:
 			attack = 'ATTACK_' + str(mm_x - 16) + '_' + str(mm_y - 16)
-			action_mapping[attack] = ['SELECT_ARMY', attack]
+			action_mapping[attack] = ['SELECT_SIEGEDTANK_ALL','UNSIEGE','SELECT_ARMY', attack, 'NOTHING','NOTHING','SELECT_TANK_ALL','SIEGE']
 
 high_actions = list(action_mapping.keys())
 

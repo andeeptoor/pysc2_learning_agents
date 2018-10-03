@@ -25,13 +25,17 @@ valid_actions = [
 	'BUILD_ENGBAY',
 	'SELECT_ARMY',
 	'RESEARCH_INFANTRY_WEAPONS_UPGRADE',
+	'SIEGE',
+	'UNSIEGE',
 	'LAND',
 ]
 
 unit_mapping = {
 	'BARRACKS':units.Terran.Barracks,
 	'ENGBAY':units.Terran.EngineeringBay,
-	'FACTORY':units.Terran.Factory
+	'FACTORY':units.Terran.Factory,
+	'TANK':units.Terran.SiegeTank,
+	'SIEGEDTANK':units.Terran.SiegeTankSieged
 }
 
 for x in range(64):
@@ -159,6 +163,16 @@ class ActionUtils:
 		elif choice == "LAND":
 			if self.can_do(actions.FUNCTIONS.Land_screen.id, obs):
 				return actions.FUNCTIONS.Land_screen("queued", self.anywhere())
+			else:
+				return self.nothing()
+		elif choice == "SIEGE":
+			if self.can_do(actions.FUNCTIONS.Morph_SiegeMode_quick.id, obs):
+				return actions.FUNCTIONS.Morph_SiegeMode_quick("now")
+			else:
+				return self.nothing()
+		elif choice == "UNSIEGE":
+			if self.can_do(actions.FUNCTIONS.Morph_Unsiege_quick.id, obs):
+				return actions.FUNCTIONS.Morph_Unsiege_quick("now")
 			else:
 				return self.nothing()
 		elif choice == 'BUILD_FACTORY_TECH_LAB':
